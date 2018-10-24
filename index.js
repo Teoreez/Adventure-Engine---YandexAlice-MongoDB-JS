@@ -14,13 +14,10 @@ const ContinueGame = new Scene(CONTINUE_GAME);
 const mongoose = require('mongoose');
 const UserData = require('./models/users.js');
 const GameData = require('./models/gamedata.js');
-mongoose.connect(process.env.MongoDB_URL,
-	{
-		useMongoClient: true
-	});
+mongoose.connect('mongodb://localhost/Adventure');
 
 //Приветсвтие
-alice.welcome( ctx => {
+alice.command('', ctx => {
 	Reply.text('Добро пожаловать! Желаете начать игру или продолжить?', {
 		buttons: ['Начать игру', 'Продолжить', 'Об игре'],
 	  });

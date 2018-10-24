@@ -1,5 +1,5 @@
 {
 	"env": {
-		"MongeDB_URL": "mongodb://localhost/Adventure"
+		"MongoDB_URL": "mongodb://localhost/Adventure"
 	}
 }
