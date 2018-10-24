@@ -5,8 +5,9 @@
   "main": "index.js",
   "dependencies": {
     "lodash": "latest",
-    "yandex-dialogs-sdk": "^2.0.5",
-    "mongodb": "^3.0.0"
+    "mongodb": "^3.0.0",
+    "yandex-dialogs-sdk": "^2.0.6",
+    "mongoose": "latest"
   },
   "devDependencies": {},
   "scripts": {
