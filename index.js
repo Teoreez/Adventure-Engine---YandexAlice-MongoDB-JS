@@ -38,7 +38,7 @@ alice.command('Продолжить игру' || 'Начать игру', ctx =>
 		ctx.enter(NewGame);
 	}
 })
-
+//Переходим в стадию зщадачи имени ctx.message => в имя
 NameSelect.any(ctx => {
 	var NewName = new UserData({
 		name: ctx.message,
@@ -49,6 +49,7 @@ NameSelect.any(ctx => {
 	ctx.enter(NEW_GAME);
 	Reply.text('Скажите что угодно что бы начать...');
 })
+//Начало цепочки для нового игрока
 NewGame.any(ctx => {
 	GameData.findOne({ state: userdata.stateofgame}).exec(function (err, gamedata){
 		if (err) return handleError(err);
@@ -58,7 +59,7 @@ NewGame.any(ctx => {
 	Reply.text(gamedata.text, { buttons: gamedata.buttons})
 	ctx.enter(NEXT_MOVE);
 })
-
+//Определение варианта ответа и переход в продолжение цепочки
 NextMove.any(ctx => {	
 	var buttonid = gamedata.buttons.lastIndexOf(ctx.message);
 	if (ctx.message == gamedata.buttons[0] || gamedata.buttons[1] || gamedata.buttons[2] || gamedata.buttons[3] || gamedata.buttons[4]) {
@@ -72,7 +73,7 @@ NextMove.any(ctx => {
 		ctx.enter(CONTINUE_GAME);
 	}
 })
-
+//Продолжение диалога с возвращением к стадии разбора ответа от пользователя
 ContinueGame.any(ctx => {
 	GameData.findOne({ state: ctx.state.stateofgame}).exec(function (err,gamedata){
 		if (err) return handleError(err);
