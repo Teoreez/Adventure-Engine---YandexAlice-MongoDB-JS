@@ -14,21 +14,7 @@ const ContinueGame = new Scene(CONTINUE_GAME);
 const mongoose = require('mongoose');
 const UserData = require('./models/users.js');
 const GameData = require('./models/gamedata.js');
-const options = {
-	useNewUrlParser: true,
-	useCreateIndex: true,
-	useFindAndModify: false,
-	autoIndex: true, // Don't build indexes
-	reconnectTries: Number.MAX_VALUE, // Never stop trying to reconnect
-	reconnectInterval: 500, // Reconnect every 500ms
-	poolSize: 10, // Maintain up to 10 socket connections
-  // If not connected, return errors immediately rather than waiting for reconnect
-	bufferMaxEntries: 0,
-	connectTimeoutMS: 10000, // Give up initial connection after 10 seconds
-	socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-	family: 4 // Use IPv4, skip trying IPv6
-};
-mongoose.connect('mongodb://localhost/Adventure', options);
+mongoose.connect('mongodb://localhost/Adventure');
 
 //Приветсвтие
 alice.command('', ctx => {
@@ -42,7 +28,7 @@ alice.command('Об игре', ctx =>{
 //Начать
 alice.command('Продолжить игру' || 'Начать игру', ctx => { 
 	UserData.findOne({ uid: ctx.userId }).exec(function (err, userdata) {
-		if (err) console.log(err);
+		if (err) return handleError(err);
 		return userdata();
 	})
 	if (userdata.uid != ctx.userId) {
@@ -65,7 +51,7 @@ NameSelect.any(ctx => {
 })
 NewGame.any(ctx => {
 	GameData.findOne({ state: userdata.stateofgame}).exec(function (err, gamedata){
-		if (err) console.log(err);
+		if (err) return handleError(err);
 		return gamedata();
 	})
 	
@@ -89,7 +75,7 @@ NextMove.any(ctx => {
 
 ContinueGame.any(ctx => {
 	GameData.findOne({ state: ctx.state.stateofgame}).exec(function (err,gamedata){
-		if (err) console.log(err);
+		if (err) return handleError(err);
 		return gamedata();
 	})
 	Reply.text(gamedata.text, { buttons: gamedata.buttons})
