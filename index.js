@@ -22,13 +22,13 @@ async function queryname(uname) {
 async function querygame(ustate) {
     const gamedata = gameData.findOne({ state: ustate}).lean().exec();
 };
-async function createname(newname) {
+function createname(newname) {
     const newname = new Users({
         name: ctx.message,
         uid: ctx.userId,
         stateofgame: '0',
     });
-    await Users.save();
+    Users.save();
 };
 async function update(newstate) {
     const updatestate = new Users({
@@ -48,7 +48,7 @@ alice.command('Об игре', ctx =>
 );
 const startNewGame = async ctx => {
     ctx.session.set('stateofgame', '0');
-    ctx.enter(NameSelect);
+    ctx.enter(NAME_SELECT);
     return Reply.text('Придумайте новое имя');
 };
 
@@ -64,13 +64,11 @@ const startGame = async ctx => {
 alice.command('Начать новую игру', startNewGame);
 alice.command('Продолжить', startGame);
 
-NameSelect.any(async ctx => Reply.text(
-	async function (ctx){
-		const newname = ctx.message;
-		await createname(newname);
-		return 'Ваше имя' + ctx.message + 'верно?';
-	}
-));
+NameSelect.any( async ctx => {
+	const newname = ctx.message;
+	createname(newname);
+	return Reply.text('Ваше имя ' + newname + ' верно?');
+});
 NameSelect.command('да', startGame);
 NameSelect.command('нет', startNewGame);
 
