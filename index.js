@@ -13,9 +13,29 @@ const ContinueGame = new Scene(CONTINUE_GAME);
 //База данных
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/Adventure');
-const UserData = require('./models/users.js');
-const GameData = require('./models/gamedata.js');
+const Users = require('./models/users.js');
+const gameData = require('./models/gamedata.js');
 
+async function queryname(uname) {
+    const userdata = UserData.findOne({ uid: uname }).lean().exec();
+};
+async function querygame(ustate) {
+    const gamedata = gameData.findOne({ state: ustate}).lean().exec();
+};
+async function createname(newname) {
+    const newname = new Users({
+        name: ctx.message,
+        uid: ctx.userId,
+        stateofgame: '0',
+    });
+    await Users.save();
+};
+async function update(newstate) {
+    const updatestate = new Users({
+        stateofgame: newstate,
+    });
+    await  Users.save();
+};
 
 //Приветсвтие
 alice.command('', ctx => 
@@ -33,19 +53,9 @@ const startNewGame = ctx => {
 };
 
 const startGame = ctx => {
-    if (userdata.stateofgame != 0) {
-        UserData.findOne({ uid: ctx.userId }).exec(function (err, userdata) {
-			if (err) return handleError(err);
-			return userdata();
-        });
-        ctx.session.set('stateofgame', userdata.stateofgame);
-    } else {
-        
-    }
-    GameData.findOne({ state: userdata.stateofgame}).exec(function (err, gamedata){
-		if (err) return handleError(err);
-		return gamedata();
-    })
+	const userdata = await queryname(ctx.userId);
+	const gamedata = await querygame(userdata.stateofgame);
+	ctx.session.set('stateofgame', userdata.stateofgame);
     return Reply.text(gamedata.text, { buttons: gamedata.buttons}),
     ctx.enter(NEXT_MOVE);
 };
@@ -55,16 +65,11 @@ alice.command('Начать новую игру', startNewGame);
 alice.command('Продолжить', startGame);
 
 NameSelect.any( ctx => Reply.text(
-    function newname(ctx) {
-        var NewName = new UserData({
-            name: ctx.message,
-            uid: ctx.userId,
-            stateofgame: '0',
-        });
-        UserData.save();
-        var content = 'Ваше имя' + ctx.message + 'верно?';
-        return content;
-    }
+	function (ctx){
+		const newname = ctx.message;
+		await createname(newname);
+		return 'Ваше имя' + ctx.message + 'верно?';
+	}
 ));
 NameSelect.command('да', startGame);
 NameSelect.command('нет', startNewGame);
@@ -73,22 +78,16 @@ NameSelect.command('нет', startNewGame);
 NextMove.any(ctx => {	
 	var buttonid = gamedata.buttons.lastIndexOf(ctx.message);
 	if (ctx.message == gamedata.buttons[0] || gamedata.buttons[1] || gamedata.buttons[2] || gamedata.buttons[3] || gamedata.buttons[4]) {
-		ctx.state.stateofgame = gamedata.goto[buttonid];
-	var updatestate = new UserData({
-		stateofgame: ctx.state.stateofgame,
-	});
+	ctx.state.set('stateofgame', gamedata.goto[buttonid]);
+	await update(ctx.state.stateofgame)
 	ctx.enter(CONTINUE_GAME);
 	} else {
 		Reply.text('Вы не можете так поступить...');
-		ctx.enter(CONTINUE_GAME);
 	}
 });
 
 ContinueGame.any(ctx => {
-	GameData.findOne({ state: ctx.state.stateofgame}).exec(function (err,gamedata){
-		if (err) return handleError(err);
-		return gamedata();
-	})
+	const gamedata = await querygame(ctx.session.stateofgame);
 	Reply.text(gamedata.text, { buttons: gamedata.buttons})
 	ctx.enter(NEXT_MOVE);
 });

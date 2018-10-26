@@ -1920,3 +1920,4 @@ node_modules/sparse-bitfield/README.md
 node_modules/sparse-bitfield/test.js
 node_modules/yandex-dialogs-sdk/dist/session/userSessionMiddleware.d.ts
 node_modules/yandex-dialogs-sdk/dist/session/userSessionMiddleware.js
+testnote.js
