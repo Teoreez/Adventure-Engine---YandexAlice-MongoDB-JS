@@ -20,48 +20,56 @@ const GameData = require('./models/gamedata.js');
 //Приветсвтие
 alice.command('', ctx => 
 	Reply.text('Добро пожаловать! Желаете начать игру или продолжить?', {
-		buttons: ['Начать игру', 'Продолжить', 'Об игре'],
+		buttons: ['Начать новую игру', 'Продолжить', 'Об игре'],
 	  }),
 );
 alice.command('Об игре', ctx =>
 	Reply.text('Я даже и не знаю с чего начать...'),
 );
-//Начать
-alice.command(['Продолжить игру', 'Начать игру'], ctx => function (ctx) {
-	UserData.findOne({ uid: ctx.userId }).exec(function (err, userdata) {
-		if (err) return handleError(err);
-		return userdata();
-	});
-	if (userdata.uid != ctx.userId) {
-		return Reply.text('Придумайте имя?'),
-		ctx.enter(NameSelect);
-	} else {
-		return Reply.text('Я тебя помню, продолжим...'),
-		ctx.enter(NewGame);
-	};
-});
-//Переходим в стадию зщадачи имени ctx.message => в имя
-NameSelect.any(ctx => {
-	var NewName = new UserData({
-		name: ctx.message,
-		uid: ctx.userId,
-		stateofgame: '0',
-	});
-	ctx.state.stateofgame = userdata.stateofgame
-	ctx.enter(NEW_GAME);
-	Reply.text('Скажите что угодно что бы начать...');
-});
-//Начало цепочки для нового игрока
-NewGame.any(ctx => {
-	GameData.findOne({ state: userdata.stateofgame}).exec(function (err, gamedata){
+const startNewGame = ctx => {
+    ctx.session.set('stateofgame', '0');
+    ctx.enter(NameSelect);
+    return Reply.text('Придумайте новое имя');
+};
+
+const startGame = ctx => {
+    if (userdata.stateofgame != 0) {
+        UserData.findOne({ uid: ctx.userId }).exec(function (err, userdata) {
+			if (err) return handleError(err);
+			return userdata();
+        });
+        ctx.session.set('stateofgame', userdata.stateofgame);
+    } else {
+        
+    }
+    GameData.findOne({ state: userdata.stateofgame}).exec(function (err, gamedata){
 		if (err) return handleError(err);
 		return gamedata();
-	})
-	
-	Reply.text(gamedata.text, { buttons: gamedata.buttons})
-	ctx.enter(NEXT_MOVE);
-});
-//Определение варианта ответа и переход в продолжение цепочки
+    })
+    return Reply.text(gamedata.text, { buttons: gamedata.buttons}),
+    ctx.enter(NEXT_MOVE);
+};
+
+
+alice.command('Начать новую игру', startNewGame);
+alice.command('Продолжить', startGame);
+
+NameSelect.any( ctx => Reply.text(
+    function newname(ctx) {
+        var NewName = new UserData({
+            name: ctx.message,
+            uid: ctx.userId,
+            stateofgame: '0',
+        });
+        UserData.save();
+        var content = 'Ваше имя' + ctx.message + 'верно?';
+        return content;
+    }
+));
+NameSelect.command('да', startGame);
+NameSelect.command('нет', startNewGame);
+
+
 NextMove.any(ctx => {	
 	var buttonid = gamedata.buttons.lastIndexOf(ctx.message);
 	if (ctx.message == gamedata.buttons[0] || gamedata.buttons[1] || gamedata.buttons[2] || gamedata.buttons[3] || gamedata.buttons[4]) {
@@ -75,7 +83,7 @@ NextMove.any(ctx => {
 		ctx.enter(CONTINUE_GAME);
 	}
 });
-//Продолжение диалога с возвращением к стадии разбора ответа от пользователя
+
 ContinueGame.any(ctx => {
 	GameData.findOne({ state: ctx.state.stateofgame}).exec(function (err,gamedata){
 		if (err) return handleError(err);
@@ -84,6 +92,7 @@ ContinueGame.any(ctx => {
 	Reply.text(gamedata.text, { buttons: gamedata.buttons})
 	ctx.enter(NEXT_MOVE);
 });
+
 
 
 //Сервер
