@@ -6,7 +6,7 @@
   "dependencies": {
     "lodash": "latest",
     "mongodb": "latest",
-    "mongoose": "latest",
+    "mongoose": "^5.3.7",
     "yandex-dialogs-sdk": "^2.0.6"
   },
   "devDependencies": {},

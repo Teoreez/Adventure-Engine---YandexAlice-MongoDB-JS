@@ -80,6 +80,13 @@ alice.command('Начать новую игру', startNewGame);
 alice.command('Продолжить', startGame);
 
 
+
+const cheat = async ctx => {
+    await ctx.enter(NEXT_MOVE);
+    Reply.text('Чит');
+};
+alice.command('cheat', cheat);
+
 //Создание Имени
 NameSelect.any( async ctx => {
 	const newname = ctx.message;
@@ -102,6 +109,7 @@ NextMove.any( async ctx => {
 	}
 });
 
+alice.any(ctx => Reply.text('что то пошло не так'));
 
 //Сервер
 const port = 3001
