@@ -2,13 +2,10 @@
 const { Alice, Reply, Scene, Markup } = require('yandex-dialogs-sdk');
 const alice = new Alice();
 const NAME_SELECT = 'NAME_SELECT';
-const NEW_GAME = 'NEW_GAME';
 const NEXT_MOVE = 'NEXT_MOVE';
-const CONTINUE_GAME = 'CONTINUE_GAME'; 	
 const NameSelect = new Scene(NAME_SELECT);
-const NewGame = new Scene(NEW_GAME);
 const NextMove = new Scene(NEXT_MOVE);
-const ContinueGame = new Scene(CONTINUE_GAME);
+
 
 //База данных
 const mongoose = require('mongoose');
