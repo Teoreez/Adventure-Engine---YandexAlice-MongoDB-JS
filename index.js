@@ -16,6 +16,7 @@ mongoose.connect('mongodb://localhost/Adventure');
 const Users = require('./models/users.js');
 const gameData = require('./models/gamedata.js');
 
+//функции работы с БД
 async function queryname(uname) {
     const userdata = UserData.findOne({ uid: uname }).lean().exec();
 };
@@ -36,6 +37,11 @@ async function update(newstate) {
     });
     await  Users.save();
 };
+function nextmove(ctx) {
+    const stateofgame = ctx.state.stateofgame;
+    const gamedata = await querygame(stateofgame);
+    return Reply.text(gamedata.text, { buttons: gamedata.buttons});
+};
 
 //Приветсвтие
 alice.command('', ctx => 
@@ -46,24 +52,38 @@ alice.command('', ctx =>
 alice.command('Об игре', ctx =>
 	Reply.text('Я даже и не знаю с чего начать...'),
 );
+
+//Начало игры
+// Вилка диалога Продолжения игры и Создания новой игры
 const startNewGame = async ctx => {
-    ctx.session.set('stateofgame', '0');
+    ctx.state.set('stateofgame', '0');
     ctx.enter(NAME_SELECT);
     return Reply.text('Придумайте новое имя');
 };
 
+//продолжение игры, плюс проверка на наличие имени пользователя
 const startGame = async ctx => {
 	const userdata = await queryname(ctx.userId);
 	const gamedata = await querygame(userdata.stateofgame);
-	ctx.session.set('stateofgame', userdata.stateofgame);
-    return Reply.text(gamedata.text, { buttons: gamedata.buttons}),
-    ctx.enter(NEXT_MOVE);
+    ctx.state.set('stateofgame', userdata.stateofgame);
+    function usercheck(ctx) {
+        if (userdata.name == undefined) { 
+            ctx.enter(NAME_SELECT);
+            return Reply.text('Придумайте новое имя');
+        } else {
+            ctx.enter(NEXT_MOVE);
+            return Reply.text(gamedata.text, { buttons: gamedata.buttons});
+        };
+    };
+    
 };
 
-
+//команды основного меню
 alice.command('Начать новую игру', startNewGame);
 alice.command('Продолжить', startGame);
 
+
+//Создание Имени
 NameSelect.any( async ctx => {
 	const newname = ctx.message;
 	createname(newname);
@@ -73,23 +93,17 @@ NameSelect.command('да', startGame);
 NameSelect.command('нет', startNewGame);
 
 
+//Начало функционального лупа - основого диалога внутри комнаты хода
 NextMove.any( async ctx => {	
 	var buttonid = gamedata.buttons.lastIndexOf(ctx.message);
 	if (ctx.message == gamedata.buttons[0] || gamedata.buttons[1] || gamedata.buttons[2] || gamedata.buttons[3] || gamedata.buttons[4]) {
-	ctx.state.set('stateofgame', gamedata.goto[buttonid]);
-	update(ctx.state.stateofgame)
-	ctx.enter(CONTINUE_GAME);
+    await ctx.state.set('stateofgame', gamedata.goto[buttonid]);
+	update(ctx.state.stateofgame);
+	nextmove(ctx);
 	} else {
 		Reply.text('Вы не можете так поступить...');
 	}
 });
-
-ContinueGame.any( async ctx => {
-	const gamedata = await querygame(ctx.session.stateofgame);
-	Reply.text(gamedata.text, { buttons: gamedata.buttons})
-	ctx.enter(NEXT_MOVE);
-});
-
 
 
 //Сервер
