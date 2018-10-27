@@ -34,8 +34,8 @@ async function update(newstate) {
     });
     await  Users.save();
 };
-function nextmove(ctx) {
-    const stateofgame = ctx.state.stateofgame;
+async function nextmove(ctx) {
+    const stateofgame = ctx.session.stateofgame;
     const gamedata = await querygame(stateofgame);
     return Reply.text(gamedata.text, { buttons: gamedata.buttons});
 };
@@ -53,7 +53,7 @@ alice.command('Об игре', ctx =>
 //Начало игры
 // Вилка диалога Продолжения игры и Создания новой игры
 const startNewGame = async ctx => {
-    ctx.state.set('stateofgame', '0');
+    ctx.session.set('stateofgame', '0');
     ctx.enter(NAME_SELECT);
     return Reply.text('Придумайте новое имя');
 };
@@ -62,7 +62,7 @@ const startNewGame = async ctx => {
 const startGame = async ctx => {
 	const userdata = await queryname(ctx.userId);
 	const gamedata = await querygame(userdata.stateofgame);
-    ctx.state.set('stateofgame', userdata.stateofgame);
+    ctx.session.set('stateofgame', userdata.stateofgame);
     function usercheck(ctx) {
         if (userdata.name == undefined) { 
             ctx.enter(NAME_SELECT);
@@ -94,8 +94,8 @@ NameSelect.command('нет', startNewGame);
 NextMove.any( async ctx => {	
 	var buttonid = gamedata.buttons.lastIndexOf(ctx.message);
 	if (ctx.message == gamedata.buttons[0] || gamedata.buttons[1] || gamedata.buttons[2] || gamedata.buttons[3] || gamedata.buttons[4]) {
-    await ctx.state.set('stateofgame', gamedata.goto[buttonid]);
-	update(ctx.state.stateofgame);
+    await ctx.session.set('stateofgame', gamedata.goto[buttonid]);
+	update(ctx.session.stateofgame);
 	nextmove(ctx);
 	} else {
 		Reply.text('Вы не можете так поступить...');
