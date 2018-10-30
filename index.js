@@ -5,7 +5,7 @@ const NAME_SELECT = 'NAME_SELECT';
 const NEXT_MOVE = 'NEXT_MOVE';
 const NameSelect = new Scene(NAME_SELECT);
 const NextMove = new Scene(NEXT_MOVE);
-
+const M = Markup;
 
 //База данных
 const mongoose = require('mongoose');
@@ -14,25 +14,31 @@ const Users = require('./models/users.js');
 const gameData = require('./models/gamedata.js');
 
 //функции работы с БД
+function uid(ctx){
+    const uid = String(ctx.userId);
+    return uid;
+};
 async function queryname(uname) {
-    const userdata = UserData.findOne({ uid: uname }).lean().exec();
+    const userdata = await UserData.findOne({ uid: uname }).lean().exec();
+    return userdata;
 };
 async function querygame(ustate) {
-    const gamedata = gameData.findOne({ state: ustate}).lean().exec();
+    const gamedata = await gameData.findOne({ state: ustate}).lean().exec();
+    return gamedata;
 };
-function createname(newname) {
+async function createname(newname) {
     const newname = new Users({
         name: ctx.message,
-        uid: ctx.userId,
+        uid: uid(ctx),
         stateofgame: '0',
     });
-    Users.save();
+    await Users.save();
 };
 async function update(newstate) {
     const updatestate = new Users({
         stateofgame: newstate,
     });
-    await  Users.save();
+    await Users.save();
 };
 async function nextmove(ctx) {
     const stateofgame = ctx.session.stateofgame;
@@ -54,23 +60,26 @@ alice.command('Об игре', ctx =>
 // Вилка диалога Продолжения игры и Создания новой игры
 const startNewGame = async ctx => {
     ctx.session.set('stateofgame', '0');
-    ctx.enter(NAME_SELECT);
+    ctx.session.set('nameSelect', true);
     return Reply.text('Придумайте новое имя');
 };
 
 //продолжение игры, плюс проверка на наличие имени пользователя
 const startGame = async ctx => {
-	const userdata = await queryname(ctx.userId);
-	const gamedata = await querygame(userdata.stateofgame);
+	const userdata = await queryname(uid(ctx));
+	const gamedata = await querygame(ctx.session.get('stateofgame'));
     ctx.session.set('stateofgame', userdata.stateofgame);
     function usercheck(ctx) {
         if (userdata.name == undefined) { 
-            ctx.enter(NAME_SELECT);
-            return Reply.text('Придумайте новое имя');
+            ctx.session.set('nameselect', true)
+            Reply.text('Придумайте новое имя');
+            
         } else {
             ctx.enter(NEXT_MOVE);
-            return Reply.text(gamedata.text, { buttons: gamedata.buttons});
+            Reply.text(gamedata.text, { buttons: gamedata.buttons});
+            
         };
+    
     };
     
 };
@@ -79,37 +88,34 @@ const startGame = async ctx => {
 alice.command('Начать новую игру', startNewGame);
 alice.command('Продолжить', startGame);
 
-
-
-const cheat = async ctx => {
-    await ctx.enter(NEXT_MOVE);
-    Reply.text('Чит');
-};
-alice.command('cheat', cheat);
-
-//Создание Имени
-NameSelect.any( async ctx => {
-	const newname = ctx.message;
-	createname(newname);
-	return Reply.text('Ваше имя ' + newname + ' верно?');
-});
-NameSelect.command('да', startGame);
-NameSelect.command('нет', startNewGame);
-
-
 //Начало функционального лупа - основого диалога внутри комнаты хода
 NextMove.any( async ctx => {	
 	var buttonid = gamedata.buttons.lastIndexOf(ctx.message);
 	if (ctx.message == gamedata.buttons[0] || gamedata.buttons[1] || gamedata.buttons[2] || gamedata.buttons[3] || gamedata.buttons[4]) {
-    await ctx.session.set('stateofgame', gamedata.goto[buttonid]);
-	update(ctx.session.stateofgame);
-	nextmove(ctx);
+    ctx.session.set('stateofgame', gamedata.goto[buttonid]);
+	await update(ctx.session.get('stateofgame'));
+	await nextmove(ctx);
 	} else {
 		Reply.text('Вы не можете так поступить...');
 	}
 });
 
-alice.any(ctx => Reply.text('что то пошло не так'));
+//Отлов Any, а так же нового имени
+alice.any(async ctx => {
+    if (ctx.session.get('nameSelect') == true) {
+        const newname = String(ctx.message);
+        createname(newname);
+        ctx.session.set('name', newname);
+        return Reply.text('Ваше имя ' + newname + ' верно?', {
+            buttons: ['Именно так', 'Это не совсем так'],
+            });
+    } else {
+        console.log(ctx.userId);
+        return Reply.text('что то пошло не так');
+    }
+});
+alice.command('Именно так', startGame);
+alice.command('Это не совсем так', startNewGame);
 
 //Сервер
 const port = 3001

@@ -1,19 +1,65 @@
-const { Alice, Reply, Scene, Markup } = require('yandex-dialogs-sdk');
+const { Alice, Scene, Reply, Markup } = require('yandex-dialogs-sdk');
+
 const alice = new Alice();
-const NAME_SELECT = 'NAME_SELECT';
-const NameSelect = new Scene(NAME_SELECT);
 
 
-alice.command('', ctx => {
-	return Reply.text('Добро пожаловать! Желаете начать игру или продолжить?', {
-		buttons: ['Начать новую игру', 'Продолжить', 'Об игре'],
-	  });
-	});
+const M = Markup;
 
-alice.command('Раз', ctx => {
-	//ctx.enter(NAME_SELECT);
-	return Reply.text('Два');
+const welcomeMatcher = ctx => ctx.data.session.new === true;
+alice.command(welcomeMatcher, ctx =>
+  Reply.text('Привет! Я загадала число от 1 до 100. Сможешь отгадать его?', {
+    buttons: [M.button('Давай попробуем!'), M.button('Не хочу')],
+  }),
+);
+
+alice.command('Нуп', ctx => {
+	
+	return Reply.text(
+		`Ты победил! Я загадала число. Сыграешь ещё раз?`,
+		{
+			buttons: [M.button('Сыграть ещё раз!'), M.button('Не хочу')],
+		},
+	);
 });
 
-const port = 3001
-alice.listen(port, '/', callback => console.log(port))
+const server = alice.listen(8080, '/');
+
+
+
+const nameSelect = async ctx => {
+	
+}
+
+
+
+
+
+alice.any(/\b\w+\b/g, async ctx => {
+	const newname = String(ctx.message);
+	//console.log(ctx.message);
+//await createname(newname);
+return Reply.text('Ваше имя ' + newname + ' верно?', {
+	buttons: ['Именно так', 'Это не совсем так'],
+	});
+});
+
+
+
+
+
+
+
+
+
+
+
+alice.any(ctx => {
+		if (ctx.session.nameSelect == true) {
+			newname = String(ctx.message);
+			return Reply.text('Ваше имя ' + newname + ' верно?', {
+				buttons: ['Именно так', 'Это не совсем так'],
+				});
+		} else {
+			return Reply.text('что то пошло не так');
+		}
+});
