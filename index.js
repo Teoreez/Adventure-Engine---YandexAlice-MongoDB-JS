@@ -3,7 +3,7 @@ const { Alice, Reply, Scene, Markup } = require('yandex-dialogs-sdk');
 const alice = new Alice();
 const NAME_SELECT = 'NAME_SELECT';
 const NEXT_MOVE = 'NEXT_MOVE';
-const NameSelect = new Scene(NAME_SELECT);
+//const NameSelect = new Scene(NAME_SELECT); - временно реализовано через отлов any
 const NextMove = new Scene(NEXT_MOVE);
 const M = Markup;
 
@@ -14,34 +14,31 @@ const Users = require('./models/users.js');
 const gameData = require('./models/gamedata.js');
 
 //функции работы с БД
+//костыль для получения userId
 function uid(ctx){
     const uid = String(ctx.userId);
     return uid;
 };
+//получение объекта пользователя из БД
 async function queryname(uname) {
-    const userdata = await UserData.findOne({ uid: uname }).lean().exec();
+    const userdata = await Users.findOne({ uid: uname }).lean().exec();
     return userdata;
 };
 async function querygame(ustate) {
     const gamedata = await gameData.findOne({ state: ustate}).lean().exec();
     return gamedata;
 };
-async function createname(newname) {
+async function updateusers(newname, newstate) {
     const newname = new Users({
-        name: ctx.message,
+        name: newname,
         uid: uid(ctx),
-        stateofgame: '0',
-    });
-    await Users.save();
-};
-async function update(newstate) {
-    const updatestate = new Users({
         stateofgame: newstate,
     });
-    await Users.save();
+    await newname.save();
 };
+
 async function nextmove(ctx) {
-    const stateofgame = ctx.session.stateofgame;
+    const stateofgame = ctx.session.get('stateofgame');
     const gamedata = await querygame(stateofgame);
     return Reply.text(gamedata.text, { buttons: gamedata.buttons});
 };
@@ -93,7 +90,7 @@ NextMove.any( async ctx => {
 	var buttonid = gamedata.buttons.lastIndexOf(ctx.message);
 	if (ctx.message == gamedata.buttons[0] || gamedata.buttons[1] || gamedata.buttons[2] || gamedata.buttons[3] || gamedata.buttons[4]) {
     ctx.session.set('stateofgame', gamedata.goto[buttonid]);
-	await update(ctx.session.get('stateofgame'));
+	await updateusers(uid(ctx), ctx.session.get('stateofgame'));
 	await nextmove(ctx);
 	} else {
 		Reply.text('Вы не можете так поступить...');
@@ -104,7 +101,7 @@ NextMove.any( async ctx => {
 alice.any(async ctx => {
     if (ctx.session.get('nameSelect') == true) {
         const newname = String(ctx.message);
-        createname(newname);
+        updateusers(newname, '0');
         ctx.session.set('name', newname);
         return Reply.text('Ваше имя ' + newname + ' верно?', {
             buttons: ['Именно так', 'Это не совсем так'],

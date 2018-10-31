@@ -46,7 +46,11 @@ return Reply.text('Ваше имя ' + newname + ' верно?', {
 
 
 
-
+var arrayone = ['almaty', 'astana', 'kokshetau'];
+var arraysec = ['applecity', 'trashcancity', 'just dont'];
+var phasenumber = arrayone.lastIndexOf(userinput);
+var answer = arraysec[phasenumber];
+console.log(answer);
 
 
 
