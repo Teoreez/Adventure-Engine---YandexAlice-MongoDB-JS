@@ -87,7 +87,7 @@ alice.command('Продолжить', startGame);
 
 //Начало функционального лупа - основого диалога внутри комнаты хода
 NextMove.any( async ctx => {
-    console.log('you are here');
+    
     const message = String(ctx.message);
     const getid = String(ctx.userId);
     const getname = String(ctx.session.get('name'));
