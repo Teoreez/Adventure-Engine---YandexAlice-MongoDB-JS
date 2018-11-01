@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/Adventure');
+const Users = require('./models/users.js');
 const gameData = require('./models/gamedata.js');
 
 async function createstuff(state, goto) {
@@ -13,7 +14,18 @@ async function createstuff(state, goto) {
     console.log('data state' + state + ' ' + goto +' done');
 };
 
-createstuff('1', '2');
-createstuff('2', '1');
+function updateusers(newname, newstate) {
+  const newUser = new Users({
+      name: newname,
+      uid: 'uid(ctx)',
+      stateofgame: newstate,
+  });
+  newUser.save();
+  
+};
+
+//createstuff('1', '2');
+//createstuff('2', '1');
+updateusers('Ivan','1');
 
 console.log('done');
