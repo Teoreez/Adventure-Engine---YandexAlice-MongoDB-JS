@@ -2,9 +2,7 @@
 const { Alice, Reply, Scene, Stage, Markup } = require('yandex-dialogs-sdk');
 const alice = new Alice();
 const stage = new Stage();
-//const NAME_SELECT = 'NAME_SELECT';
 const NEXT_MOVE = 'NEXT_MOVE';
-//const NameSelect = new Scene(NAME_SELECT); - временно реализовано через отлов any
 const NextMove = new Scene(NEXT_MOVE);
 const M = Markup;
 
@@ -69,14 +67,14 @@ const startGame = async ctx => {
     const userdata = await queryname(getid);
     const gamedata = await querygame(getsession);
     await ctx.session.set('stateofgame', userdata.stateofgame);
-    //ctx.enter(NEXT_MOVE);
-    //return Reply.text(gamedata.text, { buttons: gamedata.buttons});
+    console.log(getid);
+    
     if (getid == undefined) { 
     ctx.session.set('nameselect', true)
     return Reply.text('Придумайте новое имя');
             
     } else {
-    console.log('else');
+    
     ctx.enter(NEXT_MOVE);
     return Reply.text(gamedata.text, { buttons: gamedata.buttons});
             
@@ -94,14 +92,16 @@ NextMove.any( async ctx => {
     const getid = String(ctx.userId);
     const getname = String(ctx.session.get('name'));
     const getstate = String(ctx.session.get('stateofgame'));
-	var buttonid = gamedata.buttons.lastIndexOf(message);
+    const gamedata = await querygame(getstate);
+	
 	if (message == gamedata.buttons[0] || gamedata.buttons[1] || gamedata.buttons[2] || gamedata.buttons[3] || gamedata.buttons[4]) {
-    ctx.session.set('stateofgame', gamedata.goto[buttonid]);
-	updateusers(getname, getstate, getid);
-	await nextmove(ctx);
+        const buttonid = gamedata.buttons.lastIndexOf(message);
+        const newstate = ctx.session.set('stateofgame', gamedata.goto[buttonid]);
+        updateusers(getname, newstate, getid);
+	    return await nextmove(ctx);
 	} else {
         await nextmove(ctx);
-		Reply.text('Вы не можете так поступить, попробуйте еще раз!', { buttons: gamedata.buttons});
+		return Reply.text('Вы не можете так поступить, попробуйте еще раз!', { buttons: gamedata.buttons});
 	}
 });
 
