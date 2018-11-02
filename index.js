@@ -4,6 +4,8 @@ const alice = new Alice();
 const stage = new Stage();
 const NEXT_MOVE = 'NEXT_MOVE';
 const NextMove = new Scene(NEXT_MOVE);
+const NAME_SELECT = 'NAME_SELECT';
+const NameSelect = new Scene(NAME_SELECT);
 const M = Markup;
 
 //База данных
@@ -22,7 +24,7 @@ async function queryname(uname) {
 //получение данных из БД с игрой
 async function querygame(ustate) {
     const gamedata = await gameData.findOne({ state: ustate}).lean().exec();
-    return gamedata;
+    return gamedata;   
 };
 //обновление и создание нового пользователя
 function updateusers(newname, newstate, uid) {
@@ -52,9 +54,11 @@ alice.command('Об игре', ctx =>
 
 //Начало игры
 // Вилка диалога Продолжения игры и Создания новой игры
+stage.addScene(NameSelect);
+alice.use(stage.getMiddleware());
 const startNewGame = async ctx => {
     ctx.session.set('stateofgame', '1');
-    ctx.session.set('nameSelect', true);
+    ctx.enter(NAME_SELECT);
     return Reply.text('Придумайте новое имя');
 };
 
@@ -63,18 +67,17 @@ stage.addScene(NextMove);
 alice.use(stage.getMiddleware());
 const startGame = async ctx => {
     const getid = String(ctx.userId);
-    const getsession = String(ctx.session.get('stateofgame'));
     const userdata = await queryname(getid);
-    const gamedata = await querygame(getsession);
-    await ctx.session.set('stateofgame', userdata.stateofgame);
-    console.log(getid);
     
     if (getid == undefined) { 
-    ctx.session.set('nameselect', true)
+    ctx.session.set('stateofgame', '1')
+    ctx.enter(NAME_SELECT);
     return Reply.text('Придумайте новое имя');
-            
     } else {
-    
+    const getsession = String(userdata.stateofgame);
+    const gamedata = await querygame(getsession);
+    ctx.session.set('stageofgame', getsession);
+    ctx.session.set('name', userdata.name);
     ctx.enter(NEXT_MOVE);
     return Reply.text(gamedata.text, { buttons: gamedata.buttons});
             
@@ -105,20 +108,22 @@ NextMove.any( async ctx => {
 	}
 });
 
-//Отлов Any, а так же нового имени
-alice.any(async ctx => {
-    if (ctx.session.get('nameSelect') == true) {
-        const newname = String(ctx.message);
-        const getid = String(ctx.userId);
-        updateusers(newname, '1', getid);
-        ctx.session.set('name', newname);
-        return Reply.text('Ваше имя ' + newname + ' верно?', {
+
+NameSelect.any( async ctx => {
+    const newname = String(ctx.message);
+    const getid = String(ctx.userId);
+    updateusers(newname, '1', getid);
+    ctx.session.set('name', newname);
+    return Reply.text('Ваше имя ' + newname + ' верно?', {
             buttons: ['Именно так', 'Это не совсем так'],
-            });
-    } else {
-        
-        return Reply.text('что то пошло не так');
-    }
+    });
+});
+NameSelect.command('Именно так', startGame);
+NameSelect.command('Это не совсем так', startNewGame);
+
+//Отлов Any, а так же нового имени
+alice.any(ctx => {
+    return Reply.text('Что то пошло не так...');
 });
 //Подтверждение или отказ о назначении имени
 alice.command('Именно так', startGame);
