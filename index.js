@@ -76,7 +76,7 @@ const startGame = async ctx => {
     } else {
     const getsession = String(userdata.stateofgame);
     const gamedata = await querygame(getsession);
-    ctx.session.set('stageofgame', getsession);
+    ctx.session.set('stateofgame', getsession);
     ctx.session.set('name', userdata.name);
     ctx.enter(NEXT_MOVE);
     return Reply.text(gamedata.text, { buttons: gamedata.buttons});
