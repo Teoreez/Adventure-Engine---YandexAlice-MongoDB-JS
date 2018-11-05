@@ -55,6 +55,7 @@ alice.command('Об игре', ctx =>
 //Начало игры
 // Вилка диалога Продолжения игры и Создания новой игры
 stage.addScene(NameSelect);
+stage.addScene(NextMove);
 alice.use(stage.getMiddleware());
 const startNewGame = async ctx => {
     ctx.session.set('stateofgame', '1');
@@ -63,8 +64,6 @@ const startNewGame = async ctx => {
 };
 
 //продолжение игры, плюс проверка на наличие имени пользователя
-stage.addScene(NextMove);
-alice.use(stage.getMiddleware());
 const startGame = async ctx => {
     const getid = String(ctx.userId);
     const userdata = await queryname(getid);
