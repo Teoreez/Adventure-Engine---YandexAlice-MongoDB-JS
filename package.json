@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "mongodb": "latest",
-    "mongoose": "5.3.8",
+    "mongoose": "5.7.5",
     "yandex-dialogs-sdk": "2.0.6"
   },
   "devDependencies": {},
